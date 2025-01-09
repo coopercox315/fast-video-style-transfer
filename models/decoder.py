@@ -5,7 +5,7 @@ import torch.nn.functional as F
 class CompoundDecoder(nn.Module):
     """
     Decoder that merges two feature maps (e.g from low and high scales) into a single final image.
-    Each scale is partially decoded, then combined. 
+    Each scale is partially decoded into a more common channel dimension (mid_ch), then combined. 
     """
     def __init__(self, low_in_ch=128, high_in_ch=512, mid_ch=64):
         super().__init__()
