@@ -1,33 +1,63 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
-class Decoder(nn.Module):
+class CompoundDecoder(nn.Module):
     """
-    Decoder network which reconstructs the image from the style-adjusted feature maps.
-    This network is a mirror like structure of the encoder network's early layers, but simplified.
+    Decoder that merges two feature maps (e.g from low and high scales) into a single final image.
+    Each scale is partially decoded, then combined. 
     """
-    def __init__(self):
-        super(Decoder, self).__init__()
-        self.layers = nn.Sequential(
-            nn.Conv2d(512, 256, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Upsample(scale_factor=2, mode='nearest'),
+    def __init__(self, low_in_ch=128, high_in_ch=512, mid_ch=64):
+        super().__init__()
 
-            nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
+        #small decoder for low-scale features
+        self.low_decoder = nn.Sequential(
+            nn.Conv2d(low_in_ch, mid_ch, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(True),
             nn.Upsample(scale_factor=2, mode='nearest'),
+        )
 
-            nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(inplace=True),
+        #small decoder for high-scale features
+        self.high_decoder = nn.Sequential(
+            nn.Conv2d(high_in_ch, mid_ch, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(True),
+            #no upsampling here as we'll manually upsample to match the low-scale size.
+        )
+
+        #final decoder to merge low and high scale features, then upsample
+        self.merge_decoder = nn.Sequential(
+            nn.Conv2d(mid_ch * 2, mid_ch, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(True),
             nn.Upsample(scale_factor=2, mode='nearest'),
-
-            nn.Conv2d(64, 3, kernel_size=3, stride=1, padding=1),
-            #no activation on final layer as we want raw RGB values
+            nn.Conv2d(mid_ch, 3, kernel_size=3, stride=1, padding=1),
+            #output is (batch_size, 3, height, width) (final RGB image)
         )
     
-    def forward(self, x):
+    def forward(self, decorated_low, decorated_high):
         '''
-        The 'x' tensor here is a feature map (e.g. from the encoder network).
-        This network upsamples and reduces the number of channels back to 3 (RGB image).
+        Forward pass:
+
+        - decorated_low: (batch_size, low_in_ch, H_low, W_low)
+        - decorated_high: (batch_size, high_in_ch, H_high, W_high)
+        Returns:
+        (batch_size, 3, H_final, W_final) (final stylized image)
         '''
-        return self.layers(x)
+        
+        #1. partially decode each scale
+        decoded_low = self.low_decoder(decorated_low) # -> (B, mid_ch, H2, W2)
+        decoded_high = self.high_decoder(decorated_high) # -> (B, mid_ch, H3, W3)
+
+        #2. upsample decoded_high so its spatial size matches decoded_low
+        decoded_high_up = F.interpolate(
+            decoded_high,
+            size=(decoded_low.size(2), decoded_low.size(3)),
+            mode='nearest'
+        )
+        #now decoded_low.shape == decoded_high_up.shape == (B, mid_ch, H2, W2)
+
+        #3. concatenate the two decoded features => (B, mid_ch*2, H2, W2)
+        merged = torch.cat((decoded_low, decoded_high_up), dim=1)
+
+        #4. merge the two features and upsample to final size => (B, 3, ~H, ~W) 
+        out = self.merge_decoder(merged)
+        return out
