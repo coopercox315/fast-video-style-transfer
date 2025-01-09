@@ -51,7 +51,3 @@ class CompoundTransformerNet(nn.Module):
         #5. merge styled features using compound decoder to get final image
         out_img = self.decoder(decorated_low, decorated_high)
         return out_img
-
-
-
-                
