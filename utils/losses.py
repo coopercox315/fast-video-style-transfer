@@ -76,7 +76,3 @@ def style_loss(stylized_feat, style_feat):
     G_style = gram_matrix(style_feat)
 
     return F.mse_loss(G_stylized, G_style)
-
-
-
-
