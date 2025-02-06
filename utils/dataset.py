@@ -12,7 +12,7 @@ class ContentDataset(Dataset):
         super().__init__()
         self.root_dir = root_dir #setting root directory to given path
         self.fnames = [
-            f for f in os.listdir(root_dir) if f.lower().endswith('.jpg') or f.lower().endswith('.png')
+            f for f in os.listdir(root_dir) if f.lower().endswith('.jpg') or f.lower().endswith('.jpg') or f.lower().endswith('.png')
         ] #list of image filenames in root_dir matching the given extensions
         self.transform = transform
 
