@@ -21,7 +21,7 @@ def gram_matrix(features):
     #different to gatys et al. (2016), we compute the Gram matrix for each sample in the batch as feed forward uses batch size > 1
     
     #Compute the Gram matrix
-    g_mat = torch.mm(features, features.t(1,2))
+    g_mat = torch.bmm(features, features.transpose(1, 2))
     
     #return the normalized Gram matrix
     return g_mat.div(c * h * w)

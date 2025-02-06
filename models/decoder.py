@@ -14,7 +14,6 @@ class CompoundDecoder(nn.Module):
         self.low_decoder = nn.Sequential(
             nn.Conv2d(low_in_ch, mid_ch, kernel_size=3, stride=1, padding=1),
             nn.ReLU(True),
-            nn.Upsample(scale_factor=2, mode='nearest'),
         )
 
         #small decoder for high-scale features

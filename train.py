@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import torchvision.transforms as T
 from PIL import Image
+import argparse
 from utils.dataset import ContentDataset
 from utils.losses import LossNetwork, style_loss, content_loss
 from models.video_transformer import CompoundTransformerNet
@@ -30,12 +31,13 @@ def train_style_transfer(
         T.ToTensor(),
     ])
     dataset = ContentDataset(content_dir, transform=train_transform)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, drop_last=True)
 
     #2. Load style image
     style_img = T.ToTensor()(T.Resize(train_img_size)(T.CenterCrop(train_img_size)(
         Image.open(style_img).convert('RGB'))))
     style_img = style_img.unsqueeze(0).to(device) #add batch dimension, shape (1, 3, H, W)
+    style_img = style_img.repeat(batch_size, 1, 1, 1) #repeat style image to match batch size
 
     #3. Initialize model and move it to device
     model = CompoundTransformerNet(
@@ -86,11 +88,11 @@ def train_style_transfer(
             optimizer.step()
 
             #4. Logging
-            if i % 10 == 0:
-                print(f"Epoch [{epoch}/{epochs}], Step [{i}/{len(dataloader)}], 
+            if i % 50 == 0:
+                print(f'''Epoch [{epoch}/{epochs}], Step [{i}/{len(dataloader)}], 
                       Content Loss: {c_loss.item():.4f}, 
-                      Style Loss: {s_loss.item():.4f},
-                      Total Loss: {total_loss.item():.4f}")
+                      Style Loss: {s_loss.item():.6f},
+                      Total Loss: {total_loss.item():.4f}''')
             
     #Save the trained model
     torch.save(model.state_dict(), save_path)
@@ -98,15 +100,27 @@ def train_style_transfer(
     print(f"Training Complete. Model saved at {save_path}")
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train model for fast style transfer")
+    parser.add_argument('--content_dir', type=str, required=True, help="Directory containing content images")
+    parser.add_argument('--style_img', type=str, required=True, help="Path to style image")
+    parser.add_argument('--epochs', type=int, default=2, help="Number of training epochs")
+    parser.add_argument('--batch_size', type=int, default=4, help="Batch size for training")
+    parser.add_argument('--lr', type=float, default=1e-4, help="Learning rate")
+    parser.add_argument('--train_img_size', type=int, default=256, help="Training image size")
+    parser.add_argument('--content_weight', type=float, default=1, help="Content loss weight")
+    parser.add_argument('--style_weight', type=float, default=1e6, help="Style loss weight")
+    parser.add_argument('--save_path', type=str, default='style_transfer_net.pt', help="Path to save trained model (.pt)")
+    args = parser.parse_args()
+
     train_style_transfer(
-        content_dir='./content_images',
-        style_img='./style_image.jpg',
-        epochs=2,
-        batch_size=4,
-        lr=1e-4,
-        train_img_size=256,
-        content_weight=1,
-        style_weight=1e6,
-        save_path='style_transfer_net.pt',
+        content_dir=args.content_dir,
+        style_img=args.style_img,
+        epochs=args.epochs,
+        batch_size=args.batch_size,
+        lr=args.lr,
+        train_img_size=args.train_img_size,
+        content_weight=args.content_weight,
+        style_weight=args.style_weight,
+        save_path=args.save_path,
         device=device,
     )

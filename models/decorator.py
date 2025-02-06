@@ -35,7 +35,7 @@ class FilterPredictor(nn.Module):
 
         #1. adaptive pooling to flatten style features to (B, C, 1, 1), then flatten to (B, C)
         style_pooled = F.adaptive_avg_pool2d(style_features, (1, 1)) # -> (B, C, 1, 1)
-        style_pooled = style_features.view(B, -1) # -> (B, C).
+        style_pooled = style_pooled.view(B, -1) # -> (B, C).
 
         #2. feed into MLP
         filter_params = self.fc(style_pooled) # -> (B, out_channels * kernel_size^2)

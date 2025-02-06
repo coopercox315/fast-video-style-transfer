@@ -30,5 +30,5 @@ class Encoder(nn.Module):
         for i, layer in enumerate(self.layers):
             x = layer(x)
             if i in self.selected_layers:
-                features[i].append(x)
+                features[i] = x
         return features

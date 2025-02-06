@@ -131,7 +131,7 @@ def main():
 
     #1. Load model
     model = CompoundTransformerNet()
-    model.load_state_dict(torch.load(args.model_path), maps_location=device)
+    model.load_state_dict(torch.load(args.model_path))
 
     #2. Load style image
     style_img = load_image(args.style, args.size) #shape [1, 3, H, W]
@@ -140,7 +140,8 @@ def main():
     if is_image_file(args.content):
         #add .jpg extension to output_path if not present
         output_path = args.output
-        if not args.content.lower().endswith(('.jpg', '.jpeg', '.png')):
+        
+        if not args.output.lower().endswith(('.jpg', '.jpeg', '.png')):
             output_path += '.jpg'
 
         #single image inference
@@ -157,7 +158,7 @@ def main():
     elif is_video_file(args.content):
         #add .mp4 extension to output_path if not present
         output_path = args.output
-        if not args.content.lower().endswith(('.mp4', '.avi', '.mov', '.mkv')):
+        if not args.output.lower().endswith(('.mp4', '.avi', '.mov', '.mkv')):
             output_path += '.mp4'
         
         #video inference
@@ -167,4 +168,4 @@ def main():
         raise ValueError("Content file must be a supported image or video format (.jpg, .jpeg, .png, .mp4, .avi, .mov, .mkv)")
     
 if __name__ == "__main__":
-    main()  
+    main() 
