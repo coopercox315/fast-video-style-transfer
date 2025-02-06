@@ -16,7 +16,7 @@ def train_style_transfer(
         style_img, #path to style image
         epochs=2,
         batch_size=4, 
-        lr=1e-4,
+        lr=1e-3,
         train_img_size=256,
         content_weight=1,
         style_weight=1e6,
@@ -89,7 +89,7 @@ def train_style_transfer(
 
             #4. Logging
             if i % 50 == 0:
-                print(f'''Epoch [{epoch}/{epochs}], Step [{i}/{len(dataloader)}], 
+                print(f'''Epoch [{epoch+1}/{epochs}], Step [{i}/{len(dataloader)}], 
                       Content Loss: {c_loss.item():.4f}, 
                       Style Loss: {s_loss.item():.6f},
                       Total Loss: {total_loss.item():.4f}''')
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     parser.add_argument('--style_img', type=str, required=True, help="Path to style image")
     parser.add_argument('--epochs', type=int, default=2, help="Number of training epochs")
     parser.add_argument('--batch_size', type=int, default=4, help="Batch size for training")
-    parser.add_argument('--lr', type=float, default=1e-4, help="Learning rate")
+    parser.add_argument('--lr', type=float, default=1e-3, help="Learning rate")
     parser.add_argument('--train_img_size', type=int, default=256, help="Training image size")
     parser.add_argument('--content_weight', type=float, default=1, help="Content loss weight")
     parser.add_argument('--style_weight', type=float, default=1e6, help="Style loss weight")
