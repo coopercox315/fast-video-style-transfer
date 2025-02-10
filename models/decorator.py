@@ -55,6 +55,7 @@ class CompoundDecorator(nn.Module):
         self.filter_pred_low = FilterPredictor(s_channels_1, out_channels=c_channels_1, kernel_size=3)
         #filter predictor for higher-scale features (e.g. conv4_1 in VGG19)
         self.filter_pred_high = FilterPredictor(s_channels_2, out_channels=c_channels_2, kernel_size=3)
+        self.reflection_pad = nn.ReflectionPad2d(1)
 
     def apply_filters(self, content_features, filters):
         """
@@ -76,7 +77,8 @@ class CompoundDecorator(nn.Module):
 
             #apply filter to content features using group convolution if C_out != C, else depthwise convolution.
             #below 'groups=C_out' means each output channel is treated as a separate group. 
-            styled_i = F.conv2d(c_i, f_i, padding=1, groups=C_out) # -> (1, C_out, H, W)
+            c_i = self.reflection_pad(c_i) # -> (1, C, H+2, W+2)
+            styled_i = F.conv2d(c_i, f_i, padding=0, groups=C_out)
             styled_features.append(styled_i)
         
         #concatenate styled features back to (B, C_out, H, W)
