@@ -12,23 +12,27 @@ class CompoundDecoder(nn.Module):
 
         #small decoder for low-scale features
         self.low_decoder = nn.Sequential(
-            nn.Conv2d(low_in_ch, mid_ch, kernel_size=3, stride=1, padding=1),
+            nn.ReflectionPad2d(1),
+            nn.Conv2d(low_in_ch, mid_ch, kernel_size=3, stride=1, padding=0),
             nn.ReLU(True),
         )
 
         #small decoder for high-scale features
         self.high_decoder = nn.Sequential(
-            nn.Conv2d(high_in_ch, mid_ch, kernel_size=3, stride=1, padding=1),
+            nn.ReflectionPad2d(1),
+            nn.Conv2d(high_in_ch, mid_ch, kernel_size=3, stride=1, padding=0),
             nn.ReLU(True),
             #no upsampling here as we'll manually upsample to match the low-scale size.
         )
 
         #final decoder to merge low and high scale features, then upsample
         self.merge_decoder = nn.Sequential(
-            nn.Conv2d(mid_ch * 2, mid_ch, kernel_size=3, stride=1, padding=1),
+            nn.ReflectionPad2d(1),
+            nn.Conv2d(mid_ch * 2, mid_ch, kernel_size=3, stride=1, padding=0),
             nn.ReLU(True),
-            nn.Upsample(scale_factor=2, mode='nearest'),
-            nn.Conv2d(mid_ch, 3, kernel_size=3, stride=1, padding=1),
+            nn.Upsample(scale_factor=2, mode='bicubic'),
+            nn.ReflectionPad2d(1),
+            nn.Conv2d(mid_ch, 3, kernel_size=3, stride=1, padding=0),
             #output is (batch_size, 3, height, width) (final RGB image)
         )
     
@@ -50,7 +54,7 @@ class CompoundDecoder(nn.Module):
         decoded_high_up = F.interpolate(
             decoded_high,
             size=(decoded_low.size(2), decoded_low.size(3)),
-            mode='nearest'
+            mode='bicubic'
         )
         #now decoded_low.shape == decoded_high_up.shape == (B, mid_ch, H2, W2)
 

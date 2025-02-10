@@ -34,8 +34,9 @@ def train_style_transfer(
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, drop_last=True)
 
     #2. Load style image
-    style_img = T.ToTensor()(T.Resize(train_img_size)(T.CenterCrop(train_img_size)(
-        Image.open(style_img).convert('RGB'))))
+    style_img = T.ToTensor()(
+        T.Resize(train_img_size, T.InterpolationMode.BICUBIC)
+                (Image.open(style_img).convert('RGB')))
     style_img = style_img.unsqueeze(0).to(device) #add batch dimension, shape (1, 3, H, W)
     style_img = style_img.repeat(batch_size, 1, 1, 1) #repeat style image to match batch size
 
@@ -88,7 +89,7 @@ def train_style_transfer(
             optimizer.step()
 
             #4. Logging
-            if i % 50 == 0:
+            if i % 100 == 0:
                 print(f'''Epoch [{epoch+1}/{epochs}], Step [{i}/{len(dataloader)}], 
                       Content Loss: {c_loss.item():.4f}, 
                       Style Loss: {s_loss.item():.6f},
