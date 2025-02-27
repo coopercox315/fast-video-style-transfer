@@ -27,7 +27,7 @@ def train_style_transfer(
     train_transform = T.Compose([
         T.ToPILImage(), #ensures image is converted to PIL image
         T.Resize(train_img_size, T.InterpolationMode.BICUBIC),
-        T.CenterCrop(train_img_size), #if varying aspect ratios, will crop to square 
+        T.CenterCrop(train_img_size), #if varying aspect ratios, will crop to square
         T.ToTensor(),
     ])
     dataset = ContentDataset(content_dir, transform=train_transform)
@@ -49,7 +49,7 @@ def train_style_transfer(
     ).to(device)
 
     #4. Initialize loss network
-    loss_net = LossNetwork(content_layer=21, style_layers=(0, 5, 10, 19, 28)).to(device)
+    loss_net = LossNetwork(content_layer=21, style_layers=(1, 6, 11, 20, 28)).to(device)
     loss_net.eval() #freeze params
 
     #5. Define optimizer
@@ -125,3 +125,7 @@ if __name__ == "__main__":
         save_path=args.save_path,
         device=device,
     )
+
+    # #model training for multiple
+    # train_style_transfer(content_dir='data/train/coco/train2017_subset', style_img='data/styles/starry.jpg', epochs=20, batch_size=4, train_img_size=512, content_weight=1, style_weight=1e6, save_path='starry_model_5k_20epoch_512_4batch.pt', device=device)
+    # train_style_transfer(content_dir='data/train/coco/train2017_subset', style_img='data/styles/starry.jpg', epochs=30, batch_size=4, train_img_size=640, content_weight=1, style_weight=1e6, save_path='starry_model_5k_30epoch_640_4batch.pt', device=device)
